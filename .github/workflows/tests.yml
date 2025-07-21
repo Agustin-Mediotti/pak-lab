@@ -1,0 +1,38 @@
+name: Rust
+
+on:
+  push:
+    branches:
+    - master 
+    - release/*
+    
+  pull_request:
+    branches: 
+    - master
+    - release/*
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Check
+      run: cargo check --verbose
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      run: cargo build --verbose
+  
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run tests
+      run: cargo test --verbose
