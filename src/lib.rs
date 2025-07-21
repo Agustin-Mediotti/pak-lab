@@ -3,6 +3,8 @@ use actix_web::{
     {App, HttpResponse, HttpServer, Responder, web},
 };
 
+use std::net::TcpListener;
+
 /// Health check endpoint for monitoring the server's status.
 ///
 /// This asynchronous handler responds with HTTP 200 OK, indicating that
@@ -24,9 +26,9 @@ async fn health_check() -> impl Responder {
     HttpResponse::Ok().finish()
 }
 
-pub fn run() -> Result<Server, std::io::Error> {
+pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
-        .bind(("127.0.0.1", 8080))?
+        .listen(listener)?
         .run();
     Ok(server)
 }
