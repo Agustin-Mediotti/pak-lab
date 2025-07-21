@@ -6,5 +6,16 @@ version = "0.2.0"
 license = "MIT OR Apache-2.0"
 edition = "2024"
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/main.rs"
+name = "pak_lab"
+
 [dependencies]
 actix-web = "4.11.0"
+tokio = {version = "1.46.1", features = ["macros", "rt-multi-thread"]}
+
+[dev-dependencies]
+reqwest = "0.12.22"
