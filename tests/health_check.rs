@@ -1,3 +1,5 @@
+use pak_lab::configuration::get_configuration;
+use sqlx::{Connection, PgConnection};
 use std::net::TcpListener;
 
 /// Spin up an instance of our application
@@ -16,11 +18,8 @@ fn spawn_app() -> String {
 async fn check_test_works() {
     let address = spawn_app();
     let client = reqwest::Client::new();
-    let res = client
-        .get(format!("{}/health_check", &address))
-        .send()
-        .await
-        .expect("failed to execute request");
+    let get = client.get(format!("{}/health_check", &address));
+    let res = get.send().await.expect("failed to execute request");
 
     assert!(res.status().is_success());
     assert_eq!(Some(0), res.content_length());
@@ -29,6 +28,11 @@ async fn check_test_works() {
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
     let app_address = spawn_app();
+    let configuration = get_configuration().expect("failed to read configuration");
+    let connection_string = configuration.database.connection_string();
+    let mut connection = PgConnection::connect(&connection_string)
+        .await
+        .expect("failed to connect to Postgres");
     let client = reqwest::Client::new();
 
     let body = "name=le%guin&email=ursula_le_guin%40gmail.com";
@@ -41,6 +45,14 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
         .expect("failed to execute request");
 
     assert_eq!(200, res.status().as_u16());
+
+    let saved = sqlx::query!("SELECT email, name FROM subscriptions")
+        .fetch_one(&mut connection)
+        .await
+        .expect("failed to fetch saved subscriptions");
+
+    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
+    assert_eq!(saved.name, "le guin");
 }
 
 #[tokio::test]

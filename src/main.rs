@@ -1,11 +1,19 @@
+use pak_lab::configuration::get_configuration;
 use pak_lab::run;
 use std::net::TcpListener;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let listener = TcpListener::bind("127.0.0.1:8080").expect("failed to bind");
-    let port = listener.local_addr().unwrap().port();
+    let configuration = get_configuration().expect("failed to read configuration");
+    let address = format!(
+        "{}:{}",
+        configuration.database.host, configuration.application_port
+    );
+    let listener = TcpListener::bind(address).expect("failed to bind");
 
-    println!("App running on: 127.0.0.1:{port}");
+    println!(
+        "App running on {}:{}",
+        configuration.database.host, configuration.application_port
+    );
     run(listener)?.await
 }
