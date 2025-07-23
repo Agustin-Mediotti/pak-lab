@@ -1,5 +1,17 @@
 use std::net::TcpListener;
 
+/// Spin up an instance of our application
+/// and returns its address (i.e. http://localhost:XXXX)
+fn spawn_app() -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("failed to bind random port");
+    // retrieve the port assigned by the OS
+    let port = listener.local_addr().unwrap().port();
+    let server = pak_lab::run(listener).expect("failed to bind address");
+    tokio::spawn(server);
+    // return app address to caller
+    format!("http://127.0.0.1:{port}")
+}
+
 #[tokio::test]
 async fn check_test_works() {
     let address = spawn_app();
@@ -14,12 +26,47 @@ async fn check_test_works() {
     assert_eq!(Some(0), res.content_length());
 }
 
-fn spawn_app() -> String {
-    let listener = TcpListener::bind("127.0.0.1:0").expect("failed to bind random port");
-    // retrieve the port assigned by the OS
-    let port = listener.local_addr().unwrap().port();
-    let server = pak_lab::run(listener).expect("failed to bind address");
-    tokio::spawn(server);
-    // return app address to caller
-    format!("http://127.0.0.1:{port}")
+#[tokio::test]
+async fn subscribe_returns_a_200_for_valid_form_data() {
+    let app_address = spawn_app();
+    let client = reqwest::Client::new();
+
+    let body = "name=le%guin&email=ursula_le_guin%40gmail.com";
+    let res = client
+        .post(format!("{}/subscription", &app_address))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(body)
+        .send()
+        .await
+        .expect("failed to execute request");
+
+    assert_eq!(200, res.status().as_u16());
+}
+
+#[tokio::test]
+async fn subscribe_returns_a_400_when_data_is_missing() {
+    let app_address = spawn_app();
+    let client = reqwest::Client::new();
+
+    let test_cases = vec![
+        ("name=le%20guin", "missing the email"),
+        ("email=ursula_le_guin%40gmail.com", "missing the name"),
+        ("", "missing both name and email"),
+    ];
+
+    for (invalid_body, error_message) in test_cases {
+        let res = client
+            .post(format!("{app_address}/subscription"))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(invalid_body)
+            .send()
+            .await
+            .expect("failed to execute request");
+
+        assert_eq!(
+            400,
+            res.status().as_u16(),
+            "The API did not fail with 400 Bad Request when the payload was {error_message}"
+        )
+    }
 }
