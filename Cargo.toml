@@ -1,6 +1,6 @@
 [package]
 name = "pak-lab"
-author = ["NetCreature, <pak.mailbox.adm@gmail.com>"]
+authors = ["NetCreature, <pak.mailbox.adm@gmail.com>"]
 homepage = "https://pak.com.ar"
 version = "0.3.0"
 license = "MIT OR Apache-2.0"
@@ -18,19 +18,19 @@ actix-web = "4.11.0"
 chrono = "0.4.41"
 config = "0.15.13"
 serde = { version = "1.0.219", features = ["derive"] }
-tokio = {version = "1.46.1", features = ["macros", "rt-multi-thread"]}
+tokio = { version = "1.46.1", features = ["macros", "rt-multi-thread"] }
 uuid = { version = "1.17.0", features = ["v4"] }
 
 [dependencies.sqlx]
 version = "0.8.6"
 default-features = false
 features = [
-         "runtime-tokio-rustls",
-         "macros",
-         "postgres",
-         "uuid",
-         "chrono",
-         "migrate"
+    "runtime-tokio-rustls",
+    "macros",
+    "postgres",
+    "uuid",
+    "chrono",
+    "migrate",
 ]
 
 [dev-dependencies]
