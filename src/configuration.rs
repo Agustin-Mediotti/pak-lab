@@ -18,7 +18,7 @@ pub struct DatabaseSettings {
 
 pub fn get_configuration() -> Result<Settings, ConfigError> {
     let settings = Config::builder()
-        .add_source(File::with_name("configuration"))
+        .add_source(File::with_name("configuration.yaml"))
         .build()?;
 
     settings.try_deserialize::<Settings>()
