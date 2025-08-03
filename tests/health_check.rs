@@ -113,3 +113,27 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
         )
     }
 }
+
+#[tokio::test]
+async fn subscribe_returns_500_when_db_error_occurs() {
+    let app = spawn_app().await;
+
+    // Drop the table to force a 500
+    sqlx::query!("DROP TABLE subscriptions;")
+        .execute(&app.db_pool)
+        .await
+        .expect("Failed to drop subscriptions table.");
+
+    let client = reqwest::Client::new();
+    let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+    let response = client
+        .post(format!("{}/subscription", &app.address))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(body)
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    assert_eq!(500, response.status().as_u16());
+}
