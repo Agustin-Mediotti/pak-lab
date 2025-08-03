@@ -10,7 +10,16 @@ on:
       - master
 
 env:
-  CARGO_TERM_COLOR: always
+  CARGO_TERM_COLOR: ${{ vars.CARGO_TERM_COLOR }}
+  DATABASE_URL: ${{ vars.DATABASE_URL }}
+  SQLX_FEATURES: ${{ vars.SQLX_FEATURES }}
+  SQLX_VERSION: ${{ vars.SQLX_VERSION }}
+  POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+  APP_USER: app
+  APP_USER_PWD: secret
+  APP_DB_NAME: newsletter
 
 jobs:
   audit:
@@ -26,24 +35,31 @@ jobs:
   test:
     name: coverage
     runs-on: ubuntu-latest
-    container:
-      image: xd009642/tarpaulin:develop-nightly
-      options: --security-opt seccomp=unconfined
     services:
       postgres:
         image: postgres:14
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports: ['5432:5432']
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+          components: llvm-tools-preview
+
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
 
       - name: Install sqlx-cli
         run: cargo install sqlx-cli
@@ -63,6 +79,8 @@ jobs:
           # Grant create db privileges to the app user
           GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
           PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${GRANT_QUERY}"
+        env:
+          DATABASE_URL: postgres://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost/${{ secrets.POSTGRES_DB }}
 
       - name: Migrate database
         run: SKIP_DOCKER=true ./scripts/init_db.sh
