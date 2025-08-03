@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DROP TABLE subscriptions;",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "10dce84a96f289e065fd0b2596210192442adaa59d6dc9917a71cdc5c1d2565a"
+}
